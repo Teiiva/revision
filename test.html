@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QCM Révision - Electronic Instrumentation & Ocean Sensors</title>
+    <style>
+        :root {
+            --primary: #005f73;
+            --secondary: #0a9396;
+            --accent: #94d2bd;
+            --dark: #222;
+            --light: #f4f4f9;
+            --correct: #2a9d8f;
+            --wrong: #e76f51;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            width: 100%;
+            padding: 1rem 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .question-box {
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: white;
+            border: 2px solid var(--accent);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+        }
+
+        .option-btn.correct {
+            background-color: var(--correct);
+            border-color: var(--correct);
+            color: white;
+        }
+
+        .option-btn.incorrect {
+            background-color: var(--wrong);
+            border-color: var(--wrong);
+            color: white;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f5f5;
+            border-left: 5px solid var(--secondary);
+            display: none;
+            line-height: 1.5;
+        }
+
+        .next-btn {
+            display: none;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            float: right;
+        }
+
+        .next-btn:hover {
+            background-color: var(--secondary);
+        }
+
+        .citation {
+            font-size: 0.8em;
+            color: #777;
+            margin-top: 5px;
+            display: block;
+            font-style: italic;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Entraînement QCM - Ocean Sensors 2023</h1>
+    <p>Basé exclusivement sur le support de cours fourni</p>
+</header>
+
+<div class="container">
+    <div class="stats">
+        <span id="progress">Question 1</span>
+        <span id="score">Score: 0</span>
+    </div>
+
+    <div class="question-box">
+        <h2 id="question-text">Chargement...</h2>
+        <div class="options" id="options-container">
+            </div>
+        <div class="explanation" id="explanation">
+            <strong>Explication :</strong> <span id="explanation-text"></span>
+        </div>
+        <button class="next-btn" id="next-btn" onclick="nextQuestion()">Question Suivante</button>
+    </div>
+</div>
+
+<script>
+    // Base de données des questions extraites du PDF
+    const database = [
+        /* --- GENERAL & ENVIRONNEMENT --- */
+        {
+            q: "Quelle est la définition d'un capteur (Sensor) par opposition à un transducteur ?",
+            options: [
+                "C'est un dispositif qui convertit une énergie électrique en énergie mécanique.",
+                "C'est un dispositif qui convertit tout type d'énergie en signal électrique.",
+                "C'est un dispositif qui convertit un signal électrique en une grandeur physique.",
+                "Il n'y a aucune différence, les termes sont synonymes."
+            ],
+            correct: 1,
+            expl: "Le capteur (sensor) convertit une grandeur physique en signal électrique compatible avec les circuits électroniques. Le transducteur est un terme plus large pour un convertisseur d'énergie (ex: électrique vers mécanique). [cite: 47, 50]"
+        },
+        {
+            q: "Quelle est l'augmentation approximative de la pression sous l'eau ?",
+            options: [
+                "1 bar tous les 100 mètres",
+                "10 bars tous les 10 mètres",
+                "1 bar tous les 10 mètres",
+                "1 bar par kilomètre"
+            ],
+            correct: 2,
+            expl: "La pression augmente d'environ 1 bar tous les 10 mètres de profondeur. [cite_start]À 6000m, cela représente 600 bars. [cite: 102]"
+        },
+        {
+            q: "Qu'est-ce qu'un capteur 'actif' ?",
+            options: [
+                "Un capteur qui fonctionne sans alimentation.",
+                "Un capteur qui bouge dans l'eau (comme un glider).",
+                "Un capteur qui ajoute de l'énergie à l'environnement pour effectuer la mesure.",
+                "Un capteur qui mesure la radioactivité."
+            ],
+            correct: 2,
+            expl: "Les capteurs actifs ajoutent de l'énergie au milieu mesuré (exemple : un sonar ou un radar), contrairement aux capteurs passifs qui reçoivent l'énergie. [cite: 52]"
+        },
+        {
+            q: "Pourquoi les ondes électromagnétiques (GPS, Wifi) ne sont-elles pas utilisées sous l'eau ?",
+            options: [
+                "Elles sont trop rapides.",
+                "L'eau bloque (atténue fortement) les radiations électromagnétiques.",
+                "Les poissons sont sensibles aux ondes.",
+                "Elles causent trop d'interférences avec les sonars."
+            ],
+            correct: 1,
+            expl: "L'eau bloque les radiations électromagnétiques. [cite_start]Il n'y a pas de GPS ou de communications satellite sous l'eau ; on utilise l'acoustique. [cite: 121]"
+        },
+        /* --- CAPTEURS (TEMP, PRESSION, COND) --- */
+        {
+            q: "Quel type de capteur de température offre la meilleure linéarité et stabilité ?",
+            options: [
+                "Thermistance NTC",
+                "Thermocouple",
+                "RTD (ex: PT100 en Platine)",
+                "Diode silicium"
+            ],
+            correct: 2,
+            expl: "Les RTD (souvent en platine) sont très stables et linéaires, avec une précision pouvant atteindre 0.005°C. [cite_start]Les thermistances sont plus sensibles mais moins linéaires. [cite: 178, 180]"
+        },
+        {
+            q: "Quel est le principal défaut des thermistances ?",
+            options: [
+                "Elles sont très coûteuses.",
+                "Elles sont fortement non-linéaires.",
+                "Elles ne fonctionnent pas dans l'eau salée.",
+                "Elles ont une très faible sensibilité."
+            ],
+            correct: 1,
+            expl: "La résistance d'une thermistance varie fortement avec la température (NTC ou PTC) mais de manière non-linéaire (exponentielle). [cite: 182]"
+        },
+        {
+            q: "Quelle relation permet de calculer la salinité (Conductivité, Température, Profondeur) ?",
+            options: [
+                "La salinité dépend uniquement de la conductivité.",
+                "La salinité est une fonction de la conductivité, de la pression et de la température.",
+                "La salinité dépend uniquement de la température.",
+                "La salinité est mesurée directement par un capteur chimique."
+            ],
+            correct: 1,
+            expl: "La salinité (en PSU) est calculée à partir des mesures de Conductivité, Température et Pression. [cite: 188]"
+        },
+        {
+            q: "Pour mesurer la conductivité de l'eau, quel type de signal est utilisé aux électrodes ?",
+            options: [
+                "Un signal continu (DC) pour être précis.",
+                "Un signal alternatif (AC) pour éviter la polarisation.",
+                "Un signal numérique.",
+                "Une haute tension."
+            ],
+            correct: 1,
+            expl: "On utilise un signal AC pour mesurer la résistance aux bornes des électrodes afin d'éviter l'électrolyse et la polarisation. [cite: 190]"
+        },
+        {
+            q: "À quoi correspond une mesure 'Full Ocean' ?",
+            options: [
+                "Jusqu'à 100m de profondeur.",
+                "Jusqu'à 6000m de profondeur (99% de l'océan).",
+                "Uniquement à la surface.",
+                "Dans toutes les mers du globe simultanément."
+            ],
+            correct: 1,
+            expl: "La qualification 'Full Ocean' désigne un instrument capable d'aller à 6000m, ce qui couvre 99% de l'océan. [cite: 103]"
+        },
+        /* --- CARACTÉRISTIQUES CAPTEURS --- */
+        {
+            q: "Quelle est la différence entre Précision (Precision) et Justesse (Accuracy) ?",
+            options: [
+                "C'est la même chose.",
+                "La précision est la proximité avec la vraie valeur, la justesse est la répétabilité.",
+                "L'accuracy (Justesse) est la moyenne correcte par rapport au vrai, la Précision est la faible dispersion des mesures.",
+                "La précision concerne les erreurs numériques, la justesse les erreurs analogiques."
+            ],
+            correct: 2,
+            expl: "L'Accuracy (Justesse) indique si la moyenne est proche de la vérité. [cite_start]La Precision indique si les mesures sont groupées (faible écart-type), même si elles sont fausses. [cite: 217, 218]"
+        },
+        {
+            q: "Qu'est-ce que l'hystérésis ?",
+            options: [
+                "Une erreur constante sur toute la plage de mesure.",
+                "Une déviation de la sortie selon que l'on augmente ou diminue la grandeur d'entrée.",
+                "Une sensibilité nulle dans une certaine zone.",
+                "Le bruit thermique du capteur."
+            ],
+            correct: 1,
+            expl: "L'hystérésis est la différence de mesure pour un même point selon qu'on l'atteint en montant ou en descendant (effet mémoire/friction). [cite: 263]"
+        },
+        {
+            q: "Qu'est-ce que la zone morte (Dead Band) ?",
+            options: [
+                "La zone où le capteur est cassé.",
+                "Une insensibilité du capteur dans une plage spécifique de l'entrée (souvent proche de zéro).",
+                "La profondeur maximale du capteur.",
+                "La zone où le capteur sature."
+            ],
+            correct: 1,
+            expl: "La 'Dead Band' est une plage d'entrée où la sortie ne change pas ou reste à zéro. [cite: 261]"
+        },
+        /* --- CONDITIONNEMENT (PONT, AOP) --- */
+        {
+            q: "Quelle est la condition d'équilibre d'un Pont de Wheatstone (R1, R3, R4, Rm) ?",
+            options: [
+                "R1 + R3 = Rm + R4",
+                "Rm * R3 = R1 * R4",
+                "Rm = R1 + R3 + R4",
+                "Toutes les résistances doivent être égales."
+            ],
+            correct: 1,
+            expl: "Le pont est équilibré (Vout = 0) lorsque le produit des résistances opposées est égal : Rm * R3 = R1 * R4. [cite: 366]"
+        },
+        {
+            q: "Pourquoi utilise-t-on un montage Kelvin (4 fils) pour mesurer une résistance ?",
+            options: [
+                "Pour doubler la précision du capteur.",
+                "Pour séparer le chemin du courant d'excitation de celui de la mesure de tension, éliminant l'erreur due aux câbles.",
+                "Pour alimenter le capteur avec deux tensions différentes.",
+                "C'est inutile pour les capteurs distants."
+            ],
+            correct: 1,
+            expl: "La connexion Kelvin sépare les fils de courant (qui subissent la chute de tension ohmique) des fils de mesure (où i ≈ 0), éliminant l'erreur liée à la résistance des câbles. [cite: 389]"
+        },
+        {
+            q: "Qu'est-ce que le CMRR (Common Mode Rejection Ratio) ?",
+            options: [
+                "Le gain maximal de l'amplificateur.",
+                "La capacité d'un amplificateur différentiel à rejeter un signal présent sur ses deux entrées (bruit commun).",
+                "Le rapport entre le signal d'entrée et le bruit de sortie.",
+                "La fréquence de coupure de l'amplificateur."
+            ],
+            correct: 1,
+            expl: "Le CMRR mesure la capacité d'un système différentiel à amplifier la différence (signal utile) tout en rejetant le mode commun (bruit). [cite: 328]"
+        },
+        {
+            q: "Quelle est une caractéristique de l'amplificateur opérationnel IDÉAL ?",
+            options: [
+                "Impédance d'entrée nulle.",
+                "Gain infini et impédance d'entrée infinie.",
+                "Courant de biais de 1mA.",
+                "Tension d'offset de 1V."
+            ],
+            correct: 1,
+            expl: "L'AOP idéal a un gain infini, une impédance d'entrée infinie (courant nul), une impédance de sortie nulle et un offset nul. [cite: 316]"
+        },
+        {
+            q: "Qu'est-ce que la tension d'offset (Vos) d'un AOP ?",
+            options: [
+                "La tension d'alimentation maximale.",
+                "La tension qu'il faut appliquer en entrée pour forcer la sortie à 0V (défaut de symétrie interne).",
+                "La tension de sortie quand l'entrée est à 5V.",
+                "Le bruit thermique de l'AOP."
+            ],
+            correct: 1,
+            expl: "En pratique, même avec les deux entrées à la même tension, la sortie n'est pas nulle. [cite_start]Vos est la tension correctrice nécessaire pour annuler la sortie. [cite: 433]"
+        },
+        /* --- ADC & FILTRAGE --- */
+        {
+            q: "Quel est le critère de Nyquist pour l'échantillonnage ?",
+            options: [
+                "F_echantillonnage = F_max",
+                "F_echantillonnage > 2 * F_max du signal",
+                "F_echantillonnage < F_max / 2",
+                "La fréquence n'a pas d'importance."
+            ],
+            correct: 1,
+            expl: "Pour reconstruire un signal sans repliement (aliasing), la fréquence d'échantillonnage doit être strictement supérieure à deux fois la fréquence maximale du signal. [cite: 550]"
+        },
+        {
+            q: "Comment calcule-t-on la valeur d'un Quantum (LSB) pour un ADC ?",
+            options: [
+                "LSB = Full_Scale * N",
+                "LSB = Full_Scale / 2^Resolution",
+                "LSB = Resolution / Full_Scale",
+                "LSB = 1 / N"
+            ],
+            correct: 1,
+            expl: "Le Quantum (ou LSB - Least Significant Bit) est la plus petite variation de tension mesurable : Plage de mesure (FS) divisée par 2 puissance le nombre de bits. [cite: 586]"
+        },
+        {
+            q: "Quelle architecture d'ADC offre la meilleure résolution (24 bits) mais est plus lente ?",
+            options: [
+                "Flash",
+                "SAR (Successive Approximation)",
+                "Sigma-Delta",
+                "Pipeline"
+            ],
+            correct: 2,
+            expl: "Les ADC Sigma-Delta utilisent le sur-échantillonnage pour atteindre de très hautes résolutions (24 bits) et une excellente linéarité, au détriment de la bande passante (vitesse). [cite: 614-615]"
+        },
+        {
+            q: "Quelle caractéristique définit un filtre de type Butterworth ?",
+            options: [
+                "La pente la plus raide.",
+                "Une réponse en phase linéaire.",
+                "La bande passante la plus plate (maximally flat).",
+                "Une ondulation dans la bande passante."
+            ],
+            correct: 2,
+            expl: "Le filtre Butterworth est conçu pour avoir une réponse en fréquence aussi plate que possible dans la bande passante, sans ondulation. [cite: 560]"
+        },
+        /* --- BRUIT & INTERFÉRENCES --- */
+        {
+            q: "Le bruit de Johnson (thermique) dans une résistance dépend de :",
+            options: [
+                "Uniquement de la résistance.",
+                "La température, la valeur de la résistance et la bande passante.",
+                "Le courant qui traverse la résistance.",
+                "La tension aux bornes de la résistance."
+            ],
+            correct: 1,
+            expl: "Le bruit de Johnson est causé par l'agitation thermique. V_bruit = sqrt(4kTRB). [cite_start]Il dépend de la Température (T), de la Résistance (R) et de la Bande passante (B). [cite: 512]"
+        },
+        {
+            q: "Quel type de bruit domine aux basses fréquences (bruit rose) ?",
+            options: [
+                "Bruit de grenaille (Shot noise)",
+                "Bruit thermique",
+                "Bruit Flicker (1/f)",
+                "Bruit blanc"
+            ],
+            correct: 2,
+            expl: "Le bruit Flicker (ou bruit en 1/f) augmente lorsque la fréquence diminue (3dB/octave). [cite_start]Il domine le spectre aux basses fréquences. [cite: 514-515]"
+        },
+        {
+            q: "Le couplage capacitif est provoqué par :",
+            options: [
+                "Un champ magnétique (courant fort).",
+                "Un champ électrique (variation de tension, dV/dt).",
+                "Une résistance commune.",
+                "La température."
+            ],
+            correct: 1,
+            expl: "Le couplage capacitif (ou électrostatique) se produit via un champ électrique entre deux conducteurs, souvent dû à des variations rapides de tension (haute impédance). [cite: 638]"
+        },
+        {
+            q: "Comment protéger un signal contre le couplage inductif (magnétique) ?",
+            options: [
+                "Utiliser un blindage en cuivre simple.",
+                "Augmenter l'impédance.",
+                "Réduire la surface de la boucle de courant (ex: paire torsadée) ou utiliser un matériau perméable.",
+                "Mettre du vernis sur le circuit."
+            ],
+            correct: 2,
+            expl: "Le couplage inductif dépend du champ magnétique et de la surface de la boucle. [cite_start]On le réduit en torsadant les câbles (réduction de surface) ou avec des blindages magnétiques spécifiques. [cite: 645, 653]"
+        },
+        /* --- PIEGES & MATHS --- */
+        {
+            q: "Calcul : Si j'ai un ADC 10 bits avec une plage de 5V, quelle est la valeur du LSB ?",
+            options: [
+                "Environ 5 mV",
+                "Environ 50 mV",
+                "Environ 0.5 V",
+                "Environ 1 mV"
+            ],
+            correct: 0,
+            expl: "LSB = 5V / 2^10 = 5 / 1024 ≈ 0.00488 V, soit environ 4.88 mV. [cite: 586]"
+        },
+        {
+            q: "Que se passe-t-il si un capteur 'Full Ocean' est mal rincé et stocké ?",
+            options: [
+                "Rien, c'est du titane.",
+                "La corrosion galvanique peut se produire si des métaux différents sont présents avec des résidus de sel.",
+                "Il va gagner en précision.",
+                "La pression interne va augmenter."
+            ],
+            correct: 1,
+            expl: "Même bien conçus, les instruments souffrent de la corrosion. [cite_start]Métaux dissimilaires + électrolyte (sel) = Batterie/Corrosion. [cite: 89, 104]"
+        },
+        {
+            q: "Qu'est-ce que le 'Biofouling' ?",
+            options: [
+                "Une erreur de calcul biologique.",
+                "La croissance d'organismes vivants sur les capteurs, faussant les mesures.",
+                "La dégradation des batteries.",
+                "Un type de carburant pour Glider."
+            ],
+            correct: 1,
+            expl: "La vie trouve toujours un chemin ('Life finds a way'). [cite_start]Les organismes poussent sur les instruments, modifiant leur géométrie ou bouchant les capteurs. [cite: 90, 105]"
+        },
+        {
+            q: "Le gain en boucle fermée d'un montage AOP non-inverseur est :",
+            options: [
+                "G = - R2 / R1",
+                "G = 1 + (R2 / R1)",
+                "G = R1 * R2",
+                "G = 1"
+            ],
+            correct: 1,
+            expl: "Pour un montage non-inverseur classique, le gain est de 1 + (Rfb / Rg). [cite_start]Le montage inverseur a un gain de -Rfb/Rg. [cite: 319, 320]"
+        },
+        {
+            q: "Lequel de ces éléments n'est PAS une source de bruit inhérent aux composants ?",
+            options: [
+                "Bruit de Johnson (Thermique)",
+                "Bruit de Grenaille (Shot)",
+                "Bruit Flicker (1/f)",
+                "Interférence Radio (RFI)"
+            ],
+            correct: 3,
+            expl: "Le bruit Johnson, Shot et Flicker sont inhérents à la physique des composants. [cite_start]Les interférences (RFI, EMI) sont des bruits externes couplés au circuit. [cite: 512, 624]"
+        },
+        {
+            q: "Pourquoi utiliser un Amplificateur d'Instrumentation (In-Amp) plutôt qu'un simple AOP ?",
+            options: [
+                "Il est moins cher.",
+                "Il a une impédance d'entrée infinie et symétrique, et un CMRR très élevé.",
+                "Il a une bande passante infinie.",
+                "Il ne nécessite pas d'alimentation."
+            ],
+            correct: 1,
+            expl: "L'In-Amp est optimisé pour mesurer des différences de potentiel faibles avec un fort mode commun (haut CMRR) et possède deux entrées à très haute impédance. [cite: 476]"
+        },
+        {
+            q: "À quoi sert l'oversampling (sur-échantillonnage) dans un ADC ?",
+            options: [
+                "À aller plus vite.",
+                "À augmenter le rapport Signal/Bruit (SNR) et la résolution effective.",
+                "À réduire la consommation.",
+                "À utiliser moins de mémoire."
+            ],
+            correct: 1,
+            expl: "L'oversampling permet d'étaler le bruit de quantification sur une plus large bande de fréquence, augmentant ainsi le SNR dans la bande utile (utilisé dans les Sigma-Delta). [cite: 615]"
+        },
+        {
+            q: "Qu'est-ce que le 'Crosstalk' (Diaphonie) ?",
+            options: [
+                "Une discussion entre deux capteurs.",
+                "Le couplage électromagnétique involontaire entre deux circuits proches (ex: source vers victime).",
+                "La perte de signal dans un câble long.",
+                "Le bruit de fond de l'océan."
+            ],
+            correct: 1,
+            expl: "Le Crosstalk est le ratio de tension couplée sur un circuit victime par rapport au signal d'un circuit source, dû à la proximité. [cite: 630]"
+        }
+    ];
+
+    // État du jeu
+    let shuffledQuestions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    // Éléments du DOM
+    const questionText = document.getElementById("question-text");
+    const optionsContainer = document.getElementById("options-container");
+    const explanationDiv = document.getElementById("explanation");
+    const explanationText = document.getElementById("explanation-text");
+    const nextBtn = document.getElementById("next-btn");
+    const progressSpan = document.getElementById("progress");
+    const scoreSpan = document.getElementById("score");
+
+    // Mélanger un tableau (Fisher-Yates)
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Initialisation
+    function initQuiz() {
+        shuffledQuestions = shuffleArray([...database]); // Copie et mélange
+        currentQuestionIndex = 0;
+        score = 0;
+        showQuestion();
+    }
+
+    // Afficher une question
+    function showQuestion() {
+        // Reset UI
+        explanationDiv.style.display = "none";
+        nextBtn.style.display = "none";
+        optionsContainer.innerHTML = "";
+        
+        // Fin du quiz ?
+        if (currentQuestionIndex >= shuffledQuestions.length) {
+            finishQuiz();
+            return;
+        }
+
+        const qData = shuffledQuestions[currentQuestionIndex];
+        
+        // Mettre à jour stats
+        progressSpan.textContent = `Question ${currentQuestionIndex + 1} / ${shuffledQuestions.length}`;
+        scoreSpan.textContent = `Score: ${score}`;
+
+        // Afficher texte
+        questionText.textContent = qData.q;
+
+        // Afficher options
+        qData.options.forEach((opt, index) => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.textContent = opt;
+            btn.onclick = () => checkAnswer(index, btn);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    // Vérifier la réponse
+    function checkAnswer(selectedIndex, btnElement) {
+        const qData = shuffledQuestions[currentQuestionIndex];
+        const allBtns = document.querySelectorAll(".option-btn");
+
+        // Désactiver tous les boutons
+        allBtns.forEach(btn => btn.disabled = true);
+
+        // Vérification
+        if (selectedIndex === qData.correct) {
+            btnElement.classList.add("correct");
+            score++;
+        } else {
+            btnElement.classList.add("incorrect");
+            // Montrer la bonne réponse
+            allBtns[qData.correct].classList.add("correct");
+        }
+
+        // Afficher explication
+        explanationText.innerHTML = qData.expl;
+        explanationDiv.style.display = "block";
+        nextBtn.style.display = "block";
+        scoreSpan.textContent = `Score: ${score}`;
+    }
+
+    // Question suivante
+    function nextQuestion() {
+        currentQuestionIndex++;
+        showQuestion();
+    }
+
+    // Fin du quiz
+    function finishQuiz() {
+        questionText.textContent = "Quiz Terminé !";
+        optionsContainer.innerHTML = `<div style="text-align:center; font-size:1.2rem;">
+            Votre score final est de <strong>${score} / ${shuffledQuestions.length}</strong>.<br><br>
+            <button class="next-btn" style="float:none;" onclick="initQuiz()">Recommencer</button>
+        </div>`;
+        explanationDiv.style.display = "none";
+        nextBtn.style.display = "none";
+    }
+
+    // Lancer au démarrage
+    initQuiz();
+
+</script>
+
+</body>
+</html>
